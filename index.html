@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Robot World</title>
+<style>
+body{margin:0;overflow:hidden;background:#080d1c;font-family:Arial}
+canvas{display:block}
+#title{position:fixed;top:20px;width:100%;text-align:center;color:#52eeff;font-size:20px;letter-spacing:3px}
+</style>
+</head>
+<body>
+<div id="title">3D ROBOT WORLD</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#080d1c');
+scene.fog=new THREE.Fog('#080d1c',8,24);
+
+const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,100);
+camera.position.set(4,3,7);
+camera.lookAt(0,1.5,0);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0x9bcaff,0x151027,2));
+const light=new THREE.PointLight(0x16cfff,70);
+light.position.set(3,5,4);scene.add(light);
+const pink=new THREE.PointLight(0xff168b,45);
+pink.position.set(-3,3,-2);scene.add(pink);
+
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(100,100),
+new THREE.MeshStandardMaterial({color:0x111b30,roughness:.7}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-.03;scene.add(floor);
+const grid=new THREE.GridHelper(40,40,0x147bb5,0x202c48);
+scene.add(grid);
+
+const blue=new THREE.MeshStandardMaterial({color:0x167fff,metalness:.5,roughness:.3});
+const dark=new THREE.MeshStandardMaterial({color:0x273147,metalness:.6,roughness:.3});
+const glow=new THREE.MeshStandardMaterial({color:0x51f6ff,emissive:0x13aacc,emissiveIntensity:2});
+
+function box(parent,x,y,z,w,h,d,mat){
+const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+m.position.set(x,y,z);parent.add(m);return m;
+}
+function sphere(parent,x,y,z,sx,sy,sz,mat){
+const m=new THREE.Mesh(new THREE.SphereGeometry(1,20,16),mat);
+m.position.set(x,y,z);m.scale.set(sx,sy,sz);parent.add(m);return m;
+}
+
+const robot=new THREE.Group();scene.add(robot);
+box(robot,0,1.4,0,.85,.8,.48,blue);
+box(robot,0,1.4,.26,.45,.23,.05,dark);
+sphere(robot,0,1.4,.3,.07,.07,.04,glow);
+box(robot,0,1.92,0,.2,.22,.2,dark);
+
+const head=new THREE.Group();head.position.y=2.3;robot.add(head);
+box(head,0,0,0,.8,.62,.58,dark);
+box(head,0,-.04,.3,.64,.27,.04,blue);
+sphere(head,-.17,-.02,.34,.07,.07,.04,glow);
+sphere(head,.17,-.02,.34,.07,.07,.04,glow);
+
+const arms=[],legs=[];
+for(const s of [-1,1]){
+const a=new THREE.Group();a.position.set(s*.52,1.72,0);robot.add(a);
+sphere(a,0,-.15,0,.14,.14,.14,dark);
+box(a,0,-.43,0,.2,.45,.2,blue);
+sphere(a,0,-.69,0,.13,.12,.13,glow);
+arms.push({a,s});
+
+const l=new THREE.Group();l.position.set(s*.23,1,0);robot.add(l);
+box(l,0,-.27,0,.23,.5,.25,dark);
+box(l,0,-.55,.08,.32,.16,.4,blue);
+legs.push({l,s});
+}
+
+const stars=[];
+for(let i=0;i<45;i++){
+const p=sphere(scene,(Math.random()-.5)*12,Math.random()*6,(Math.random()-.5)*10,.025,.025,.025,glow);
+stars.push({p,y:p.position.y,phase:Math.random()*6});
+}
+
+const clock=new THREE.Clock();
+renderer.setAnimationLoop(()=>{
+const t=clock.getElapsedTime();
+robot.position.y=.08+Math.sin(t*2)*.08;
+robot.rotation.y=Math.sin(t*.6)*.3;
+head.rotation.y=Math.sin(t*1.5)*.18;
+arms.forEach(({a,s})=>a.rotation.z=s*(.12+Math.sin(t*2.5)*.22));
+legs.forEach(({l,s})=>l.rotation.x=Math.sin(t*2)*.06);
+stars.forEach(({p,y,phase})=>p.position.y=y+Math.sin(t+phase)*.2);
+renderer.render(scene,camera);
+});
+
+addEventListener('resize',()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
